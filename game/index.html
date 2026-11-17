@@ -1,184 +1,135 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:,">
-<title>VELDORA — Open World Crime</title>
+<title>VELDORA — Open-World Crime</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0e14;
-    font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #fff;
-    -webkit-user-select: none; user-select: none; }
-  #app { position: fixed; inset: 0; }
-  #app canvas { display: block; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1c2c;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #fff; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .hidden { display: none !important; }
 
-  /* ---------- HUD ---------- */
+  /* ---- HUD ---- */
   #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
-  #cashBox { position: absolute; top: 14px; right: 16px; text-align: right;
-    font-weight: 800; font-size: 26px; color: #7dff9a;
-    text-shadow: 0 2px 4px rgba(0,0,0,.8); letter-spacing: .5px; }
-  #cashBox .label { font-size: 11px; color: #cfe8d2; letter-spacing: 2px; }
-  #stars { position: absolute; top: 52px; right: 16px; font-size: 26px; letter-spacing: 2px;
-    color: #ffd23e; text-shadow: 0 0 8px rgba(255,210,62,.7), 0 2px 4px rgba(0,0,0,.8); }
-  #stars .dim { color: rgba(255,255,255,.25); text-shadow: none; }
-  #objective { position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-    max-width: 560px; text-align: center; background: rgba(10,14,22,.72);
-    border: 1px solid rgba(255,255,255,.18); border-radius: 8px; padding: 8px 16px; }
-  #objective .mname { font-size: 12px; letter-spacing: 2px; color: #ffd23e; font-weight: 700; }
-  #objective .mtext { font-size: 15px; font-weight: 600; margin-top: 2px; }
-  #objective .mdist { font-size: 12px; color: #9fd8ff; margin-top: 2px; }
-  #minimapWrap { position: absolute; left: 16px; bottom: 16px; width: 190px; height: 190px;
-    border: 3px solid rgba(255,255,255,.85); border-radius: 50%; overflow: hidden;
-    box-shadow: 0 4px 18px rgba(0,0,0,.6); background: #1a2b1f; }
-  #minimap { width: 100%; height: 100%; display: block; }
-  #healthWrap { position: absolute; left: 216px; bottom: 30px; width: 170px; }
-  #healthWrap .hlabel { font-size: 11px; letter-spacing: 2px; color: #fff;
-    text-shadow: 0 1px 3px #000; margin-bottom: 4px; }
-  #healthBar { height: 12px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.5);
+  #stars { position: absolute; top: 14px; right: 18px; font-size: 30px; letter-spacing: 4px;
+    color: #ffd23e; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+  #stars .off { color: rgba(255,255,255,.28); }
+  #cash { position: absolute; top: 52px; right: 20px; font-size: 24px; font-weight: 800;
+    color: #7CFC9A; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  #healthWrap { position: absolute; top: 92px; right: 20px; width: 190px; }
+  #healthBar { height: 12px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.5);
     border-radius: 6px; overflow: hidden; }
-  #healthFill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff5a4e,#ff8a5c); }
-  #speedBox { position: absolute; right: 16px; bottom: 16px; text-align: right;
-    font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,.8); }
-  #speedBox .num { font-size: 44px; line-height: 1; }
-  #speedBox .unit { font-size: 12px; letter-spacing: 2px; color: #cfe0ff; }
-  #speedBox .carname { font-size: 13px; color: #ffd23e; margin-top: 2px; }
+  #healthFill { height: 100%; width: 100%; background: linear-gradient(90deg,#ff5a4e,#ffb03a); }
+  #healthLabel { font-size: 11px; text-align: right; opacity: .85; margin-top: 2px; }
+  #speed { position: absolute; bottom: 22px; right: 22px; text-align: right;
+    font-size: 34px; font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #speed small { font-size: 13px; font-weight: 600; opacity: .8; }
+  #objective { position: absolute; top: 14px; left: 18px; max-width: 380px;
+    background: rgba(0,0,0,.5); border-left: 4px solid #ffd23e; padding: 10px 12px;
+    border-radius: 4px; font-size: 15px; line-height: 1.35; }
+  #objective b { color: #ffd23e; }
+  #objective .dist { opacity: .85; font-size: 13px; }
+  #minimapWrap { position: absolute; left: 18px; bottom: 18px; width: 190px; height: 190px;
+    border-radius: 50%; overflow: hidden; border: 3px solid rgba(255,255,255,.75);
+    box-shadow: 0 4px 18px rgba(0,0,0,.6); background: #123; }
+  #minimap { width: 100%; height: 100%; display: block; }
   #crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px;
-    transform: translate(-50%,-50%); }
+    margin: -11px 0 0 -11px; }
   #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff;
     box-shadow: 0 0 4px #000; }
   #crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
   #crosshair::after { left: 0; top: 10px; width: 22px; height: 2px; }
-  #prompt { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%);
-    background: rgba(10,14,22,.8); border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
-    padding: 8px 14px; font-size: 15px; font-weight: 600; }
-  #prompt b { color: #ffd23e; }
-  #toast { position: absolute; left: 50%; top: 96px; transform: translateX(-50%);
-    font-size: 20px; font-weight: 800; color: #fff; text-shadow: 0 2px 6px #000;
-    opacity: 0; transition: opacity .3s; text-align: center; }
-  #toast.show { opacity: 1; }
-  #damage { position: fixed; inset: 0; pointer-events: none; z-index: 6;
-    box-shadow: inset 0 0 90px 30px rgba(255,0,0,.55); opacity: 0; transition: opacity .15s; }
+  #hint { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    font-size: 13px; opacity: .85; text-shadow: 0 1px 4px #000; white-space: nowrap; }
+  #toast { position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.65); padding: 10px 18px; border-radius: 6px; font-size: 17px;
+    font-weight: 700; text-align: center; max-width: 640px; transition: opacity .4s; }
+  #prompt { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%);
+    background: rgba(0,0,0,.7); border: 1px solid #ffd23e; color: #ffe98a;
+    padding: 8px 16px; border-radius: 6px; font-size: 16px; font-weight: 700; }
 
-  /* ---------- Screens ---------- */
-  .screen { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center;
-    justify-content: center; background: linear-gradient(160deg, rgba(8,12,24,.88), rgba(40,16,8,.82));
-    pointer-events: auto; }
-  .panel { width: min(620px, 92vw); max-height: 92vh; overflow-y: auto; text-align: center;
-    background: rgba(12,16,26,.92); border: 1px solid rgba(255,210,62,.35); border-radius: 14px;
-    padding: 30px 34px; box-shadow: 0 20px 60px rgba(0,0,0,.7); }
-  .panel h1 { font-size: 54px; letter-spacing: 6px; color: #ffd23e;
-    text-shadow: 0 0 24px rgba(255,180,40,.5), 0 4px 0 #7a4d00; }
-  .panel h1 .sub { display: block; font-size: 15px; letter-spacing: 8px; color: #9fd8ff;
-    text-shadow: none; margin-top: 4px; }
-  .panel h2 { font-size: 26px; letter-spacing: 3px; color: #ffd23e; margin-bottom: 10px; }
-  .panel p { font-size: 15px; line-height: 1.55; color: #dfe7ef; margin: 10px 0; }
-  .panel .story { font-style: italic; color: #c8d4e2; }
-  .btn { display: block; width: 100%; margin: 10px 0; padding: 13px; font-size: 17px; font-weight: 800;
-    letter-spacing: 1px; color: #111; background: #ffd23e; border: none; border-radius: 8px;
-    cursor: pointer; }
-  .btn:hover { background: #ffe27a; }
-  .btn.ghost { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.5); }
-  .btn.ghost:hover { background: rgba(255,255,255,.12); }
-  .btn:disabled { opacity: .45; cursor: default; }
-  .keys { text-align: left; font-size: 14px; line-height: 1.9; color: #dfe7ef; margin: 12px 0; }
-  .keys b { color: #ffd23e; display: inline-block; min-width: 120px; }
-  .missionList { text-align: left; margin: 10px 0; }
-  .missionList button { display: block; width: 100%; text-align: left; margin: 6px 0; padding: 10px 12px;
-    background: rgba(255,255,255,.07); color: #fff; border: 1px solid rgba(255,255,255,.2);
-    border-radius: 6px; font-size: 14px; cursor: pointer; }
-  .missionList button:hover { background: rgba(255,210,62,.18); }
-  .missionList button.locked { opacity: .4; cursor: default; }
-  .missionList button .rw { float: right; color: #7dff9a; font-weight: 700; }
-  #endTitle { font-size: 44px; letter-spacing: 4px; }
-  .fade { animation: fadein .4s ease; }
-  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  /* ---- Screens ---- */
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(160deg, rgba(8,30,48,.88), rgba(120,40,10,.72)); }
+  .screen h1 { font-size: 84px; margin: 0; letter-spacing: 14px; font-weight: 900;
+    background: linear-gradient(180deg,#fff8d6,#ffb03a 55%,#ff5a2a);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 6px 30px rgba(0,0,0,.35); }
+  .screen h2 { margin: 4px 0 18px; font-weight: 600; letter-spacing: 6px; font-size: 18px;
+    color: #ffe98a; text-transform: uppercase; }
+  .screen p { max-width: 620px; line-height: 1.55; font-size: 16px; color: #eef6ff; margin: 6px 0; }
+  .screen .keys { font-size: 14px; color: #cfe3f5; background: rgba(0,0,0,.35);
+    border-radius: 8px; padding: 12px 18px; margin: 14px 0; line-height: 1.9; text-align: left; }
+  .screen .keys b { color: #ffd23e; }
+  button { pointer-events: auto; cursor: pointer; font-size: 19px; font-weight: 800;
+    padding: 13px 38px; margin: 6px; border: none; border-radius: 8px; color: #1a1206;
+    background: linear-gradient(180deg,#ffe066,#ffb03a); box-shadow: 0 4px 0 #b96a00, 0 8px 22px rgba(0,0,0,.45); }
+  button:hover { filter: brightness(1.08); }
+  button.ghost { background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
+    border: 1px solid rgba(255,255,255,.5); }
+  #bustedScreen { background: linear-gradient(160deg, rgba(20,4,30,.92), rgba(60,0,20,.85)); }
+  #bustedScreen h1 { background: linear-gradient(180deg,#fff,#ff5a4e); -webkit-background-clip: text;
+    background-clip: text; }
+  #loading { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+    justify-content: center; background: #0b1c2c; font-size: 20px; letter-spacing: 3px; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<canvas id="scene" aria-label="Veldora: an open-world crime game. Explore the coastal city on foot or by car."></canvas>
+<p id="status" role="status" aria-live="polite"></p>
 
 <div id="hud" class="hidden">
-  <div id="objective"><div class="mname" id="objName">FREE ROAM</div>
-    <div class="mtext" id="objText">Explore Veldora. Find a car, cause trouble, or take a mission.</div>
-    <div class="mdist" id="objDist"></div></div>
-  <div id="cashBox"><div class="label">CASH</div><span id="cash">$500</span></div>
+  <div id="objective"><b id="objTitle">Welcome to Veldora</b><br><span id="objText"></span><br><span class="dist" id="objDist"></span></div>
   <div id="stars"></div>
+  <div id="cash">$0</div>
+  <div id="healthWrap"><div id="healthBar"><div id="healthFill"></div></div><div id="healthLabel">HEALTH</div></div>
+  <div id="speed" class="hidden">0 <small>km/h</small></div>
   <div id="minimapWrap"><canvas id="minimap" width="190" height="190"></canvas></div>
-  <div id="healthWrap"><div class="hlabel">HEALTH</div>
-    <div id="healthBar"><div id="healthFill"></div></div></div>
-  <div id="speedBox" class="hidden"><div class="num" id="speedNum">0</div>
-    <div class="unit">KM/H</div><div class="carname" id="carName"></div></div>
   <div id="crosshair" class="hidden"></div>
+  <div id="hint">WASD move &nbsp;·&nbsp; SHIFT run &nbsp;·&nbsp; SPACE jump &nbsp;·&nbsp; E enter car &nbsp;·&nbsp; F shoot &nbsp;·&nbsp; C camera &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute</div>
+  <div id="toast" class="hidden"></div>
   <div id="prompt" class="hidden"></div>
-  <div id="toast"></div>
 </div>
-<div id="damage"></div>
 
-<div id="menu" class="screen">
-  <div class="panel fade">
-    <h1>VELDORA<span class="sub">A SUN-SOAKED OPEN WORLD</span></h1>
-    <p class="story">Rook Vane came to Veldora with an empty wallet and a fast right foot.
-    The Harbor Syndicate runs the docks, the Crows run the nights — and tonight,
-    both of them want the same driver. Take the wheel. Take the city.</p>
-    <button class="btn" id="btnNew">NEW GAME</button>
-    <button class="btn ghost" id="btnContinue">CONTINUE</button>
-    <button class="btn ghost" id="btnHow">HOW TO PLAY</button>
-    <p style="font-size:12px;color:#8fa3b8">Keyboard + mouse &middot; headphones recommended &middot; progress saves automatically</p>
+<div id="startScreen" class="screen">
+  <h1>VELDORA</h1>
+  <h2>Sun · Sea · Sin — an open-world crime story</h2>
+  <p>You are <b>Rico Marlowe</b>, a wheelman fresh out of the marina lockup. The Veldora
+  syndicate owns the docks, the clubs and the cops — and you owe them one last job.
+  Run five jobs, earn your freedom, and take the crown of the coast.</p>
+  <div class="keys">
+    <b>W A S D</b> move / drive &nbsp;·&nbsp; <b>Mouse</b> look &nbsp;·&nbsp; <b>SHIFT</b> run &nbsp;·&nbsp; <b>SPACE</b> jump<br>
+    <b>E</b> enter / exit car &nbsp;·&nbsp; <b>F</b> or <b>click</b> shoot &nbsp;·&nbsp; <b>R</b> start mission &nbsp;·&nbsp; <b>P</b> pause
+  </div>
+  <div>
+    <button id="startBtn">START ENGINE</button>
+    <button id="continueBtn" class="ghost hidden">CONTINUE</button>
+  </div>
+  <p style="font-size:13px; opacity:.75">Progress saves automatically in this browser. Steal cars, dodge the law, finish all five jobs.</p>
+</div>
+
+<div id="pauseScreen" class="screen hidden">
+  <h1 style="font-size:54px">PAUSED</h1>
+  <p id="pauseStats"></p>
+  <div>
+    <button id="resumeBtn">RESUME</button>
+    <button id="quitBtn" class="ghost">SAVE &amp; QUIT TO MENU</button>
   </div>
 </div>
 
-<div id="howto" class="screen hidden">
-  <div class="panel fade">
-    <h2>HOW TO PLAY</h2>
-    <div class="keys">
-      <div><b>W A S D</b> Move / Drive</div>
-      <div><b>Mouse drag</b> Look around / camera</div>
-      <div><b>Left click</b> Shoot (on foot)</div>
-      <div><b>E</b> Enter / exit car &middot; steal parked cars</div>
-      <div><b>Shift</b> Sprint</div>
-      <div><b>Space</b> Jump / Handbrake (in car)</div>
-      <div><b>P / Esc</b> Pause &amp; missions</div>
-      <div><b>R</b> Restart current mission</div>
-      <div><b>M</b> Mute sound</div>
-    </div>
-    <p>Steal cars, dodge the law, finish all five missions to become the King of Veldora.
-    Wanted stars rise when the police see your crimes — break line of sight to cool down.
-    Getting busted or wasted costs you cash.</p>
-    <button class="btn" id="btnHowBack">BACK</button>
-  </div>
+<div id="bustedScreen" class="screen hidden">
+  <h1>BUSTED</h1>
+  <h2>The Veldora PD got you</h2>
+  <p id="bustedText">Bail and fines cost you $150.</p>
+  <button id="bustedBtn">WALK OUT FREE</button>
 </div>
 
-<div id="pause" class="screen hidden">
-  <div class="panel fade">
-    <h2>PAUSED</h2>
-    <div class="missionList" id="missionList"></div>
-    <button class="btn" id="btnResume">RESUME</button>
-    <button class="btn ghost" id="btnSave">SAVE GAME</button>
-    <button class="btn ghost" id="btnRestartMission">RESTART MISSION</button>
-    <button class="btn ghost" id="btnQuit">QUIT TO TITLE</button>
-  </div>
-</div>
+<div id="loading">LOADING VELDORA…</div>
 
-<div id="end" class="screen hidden">
-  <div class="panel fade">
-    <h2 id="endTitle">BUSTED</h2>
-    <p id="endText"></p>
-    <button class="btn" id="btnEndOk">KEEP GOING</button>
-  </div>
-</div>
-
-<script src="vendor/three.min.js"></script>
-<script src="src/util.js"></script>
-<script src="src/audio.js"></script>
-<script src="src/city.js"></script>
-<script src="src/vehicles.js"></script>
-<script src="src/people.js"></script>
-<script src="src/police.js"></script>
-<script src="src/missions.js"></script>
-<script src="src/player.js"></script>
-<script src="src/hud.js"></script>
-<script src="src/game.js"></script>
+<script src="./vendor/three.min.js"></script>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>

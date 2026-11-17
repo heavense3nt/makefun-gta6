@@ -1,219 +1,179 @@
-// VELDORA — missions and story: five jobs for Rook Vane, from first fare to
-// King of Veldora. A mission is a chain of steps; each step has a place to reach,
-// a car to enter, a package to grab, or a chase to survive.
+// VELDORA's story: five jobs for Rico Marlowe, from first fare to King of the
+// coast. Each mission is a small state machine with a beacon marker in the world,
+// a minimap blip, an objective line and a cash reward. Missions run one at a
+// time; R starts the next one when the player is ready.
 
-V.MISSION_DEFS = [
-  {
-    name: 'FIRST FARE', reward: 200,
-    briefing: 'Mara needs a cab to the Grand Veldora Hotel. Take the taxi at the stand — and don\'t keep her waiting.',
-    steps: [
-      { kind: 'goto', x: -40, z: 138, radius: 6, text: 'Get to the taxi stand' },
-      { kind: 'enter', text: 'Get in the taxi', taxi: true },
-      { kind: 'goto', x: -60, z: 138, radius: 8, text: 'Drive Mara to the Grand Veldora Hotel', time: 100, needCar: true },
-    ],
-  },
-  {
-    name: 'HOT WHEELS', reward: 350,
-    briefing: 'The Crows want the red Comet S sitting at the docks. Take it. Bring it to the garage on the west side.',
-    steps: [
-      { kind: 'goto', x: -60, z: 165, radius: 8, text: 'Get to the docks' },
-      { kind: 'enter', text: 'Steal the red Comet S', stealCar: true },
-      { kind: 'goto', x: -140, z: 78, radius: 8, text: 'Deliver the Comet to the garage', needCar: true },
-    ],
-  },
-  {
-    name: 'THE DROP', reward: 500,
-    briefing: 'A package is waiting at the hideout. Grab it, then run it to the Spire — the law will be all over you.',
-    steps: [
-      { kind: 'pickup', x: 140, z: -82, radius: 5, text: 'Pick up the package at the hideout' },
-      { kind: 'goto', x: 20, z: 20, radius: 10, text: 'Deliver the package to the Spire plaza', needCar: false, wanted: 2 },
-    ],
-  },
-  {
-    name: 'PAYBACK', reward: 600,
-    briefing: 'The Syndicate set you up. Three stars, sixty seconds, the whole city on your tail. Survive — then vanish at the hideout.',
-    steps: [
-      { kind: 'survive', time: 60, text: 'Survive the chase — 60 seconds', wanted: 3 },
-      { kind: 'goto', x: 140, z: -82, radius: 8, text: 'Lose them and reach the hideout' },
-    ],
-  },
-  {
-    name: 'KING OF VELDORA', reward: 1000,
-    briefing: 'One last run, three stops, no mistakes. Hotel, docks, Spire — then the city is yours.',
-    steps: [
-      { kind: 'goto', x: -60, z: 138, radius: 8, text: 'Checkpoint 1 of 3: the Hotel', time: 160, needCar: true },
-      { kind: 'goto', x: -60, z: 165, radius: 8, text: 'Checkpoint 2 of 3: the Docks', needCar: true },
-      { kind: 'goto', x: 20, z: 20, radius: 10, text: 'Final stop: the Spire plaza', needCar: true },
-    ],
-  },
-];
+import { MISSIONS } from './config.js';
 
-/** The mission runner: tracks the active job, its steps, timers and markers. */
-V.Missions = function Missions(ctx) {
-  this.ctx = ctx; // {scene, city, police, audio, toast, onEvent}
-  this.unlocked = 1; // how many missions the player may start
-  this.active = null; // {def, index, step, timeLeft}
-  this.marker = null; // floating beacon group
-  this.packageMesh = null;
-  this.taxiCar = null;
-  this.stealCar = null;
-  this._makeMarker();
-};
+const THREE = window.THREE;
 
-V.Missions.prototype._makeMarker = function _makeMarker() {
-  const g = new THREE.Group();
-  const gem = new THREE.Mesh(
-    new THREE.OctahedronGeometry(1.1, 0),
-    new THREE.MeshBasicMaterial({ color: 0xffd23e, transparent: true, opacity: 0.95 }));
-  gem.position.y = 7;
-  g.add(gem);
-  const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.8, 0.8, 60, 10, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffd23e, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
-  pillar.position.y = 30;
-  g.add(pillar);
-  g.visible = false;
-  this.ctx.scene.add(g);
-  this.marker = g;
-  this._gem = gem;
-};
+function makeBeacon(scene) {
+  const group = new THREE.Group();
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.4, 1.4, 60, 12, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffd23e, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  beam.position.y = 30;
+  group.add(beam);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(2.2, 0.22, 8, 24),
+    new THREE.MeshBasicMaterial({ color: 0xffd23e }),
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.4;
+  group.add(ring);
+  const diamond = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.9),
+    new THREE.MeshBasicMaterial({ color: 0xffe98a }),
+  );
+  diamond.position.y = 5;
+  group.add(diamond);
+  group.userData = { diamond };
+  group.visible = false;
+  scene.add(group);
+  return group;
+}
 
-V.Missions.prototype._showPackage = function _showPackage(x, z) {
-  this._hidePackage();
-  const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 1.1),
-    new THREE.MeshLambertMaterial({ color: 0x8a5fc2, emissive: 0x4a2a7a }));
-  box.position.set(x, 0.6, z);
-  box.castShadow = true;
-  this.ctx.scene.add(box);
-  this.packageMesh = box;
-};
-V.Missions.prototype._hidePackage = function _hidePackage() {
-  if (this.packageMesh) { this.ctx.scene.remove(this.packageMesh); this.packageMesh = null; }
-};
+export function createMissions(scene, city, hooks) {
+  const beacon = makeBeacon(scene);
+  let activeIndex = -1;   // index into MISSIONS of the running job, -1 = none
+  let completed = 0;      // how many jobs are done (also the save's progress)
+  let stage = 0;          // per-mission stage
+  let timer = 0;
+  let raceCheckpoints = [];
+  let raceIndex = 0;
+  let gangLeft = 0;
+  let packageHeld = false;
 
-V.Missions.prototype.start = function start(index) {
-  if (index < 0 || index >= V.MISSION_DEFS.length) return false;
-  if (index >= this.unlocked) return false;
-  this.stop(false);
-  const def = V.MISSION_DEFS[index];
-  this.active = { def: def, index: index, step: 0, timeLeft: 0 };
-  this._beginStep();
-  this.ctx.toast(def.name + ' — ' + def.briefing, 5200);
-  return true;
-};
+  const L = city.landmarks;
 
-V.Missions.prototype.stop = function stop(clearStars) {
-  this.active = null;
-  this.marker.visible = false;
-  this._hidePackage();
-  if (this.taxiCar) { this.ctx.scene.remove(this.taxiCar.group); this.taxiCar = null; }
-  if (this.stealCar) { this.ctx.scene.remove(this.stealCar.group); this.stealCar = null; }
-  if (clearStars !== false && this.ctx.police) this.ctx.police.stars = 0;
-};
-
-V.Missions.prototype._beginStep = function _beginStep() {
-  const a = this.active;
-  const step = a.def.steps[a.step];
-  a.timeLeft = step.time || 0;
-  this.marker.visible = false;
-  this._hidePackage();
-  if (step.kind === 'goto' || step.kind === 'pickup') {
-    this.marker.position.set(step.x, 0, step.z);
-    this.marker.visible = true;
+  function targetOf() {
+    if (activeIndex < 0) return null;
+    const id = MISSIONS[activeIndex].id;
+    if (id === 1) return stage === 0 ? L.plaza : L.marina;
+    if (id === 2) return stage === 0 ? new THREE.Vector3(3, 0, -70) : L.garage;
+    if (id === 3) return stage === 0 ? L.alley : L.beachHut;
+    if (id === 4) return L.fishMarket;
+    if (id === 5) return raceCheckpoints[raceIndex] ?? null;
+    return null;
   }
-  if (step.kind === 'pickup') this._showPackage(step.x, step.z);
-  if (step.kind === 'enter' && step.taxi) {
-    const s = this.ctx.city.spots.taxiStand;
-    this.taxiCar = V.buildCar(this.ctx.scene, { color: 0xe8b93a, kind: 'sedan', taxi: true, name: 'City Taxi' });
-    this.taxiCar.pos.set(s.x, 0, s.z);
-    this.taxiCar.heading = Math.PI;
-    this.taxiCar.group.rotation.y = Math.PI;
-    this.marker.position.set(s.x, 0, s.z);
-    this.marker.visible = true;
-  }
-  if (step.kind === 'enter' && step.stealCar) {
-    const s = this.ctx.city.spots.docks;
-    this.stealCar = V.buildCar(this.ctx.scene, { color: 0xc23b3b, kind: 'sport', name: 'Comet S' });
-    this.stealCar.pos.set(s.x + 8, 0, s.z - 6);
-    this.stealCar.heading = Math.PI / 2;
-    this.stealCar.group.rotation.y = Math.PI / 2;
-    this.marker.position.set(s.x + 8, 0, s.z - 6);
-    this.marker.visible = true;
-  }
-  if (step.wanted && this.ctx.police) this.ctx.police.stars = step.wanted;
-};
 
-V.Missions.prototype.currentStep = function currentStep() {
-  return this.active ? this.active.def.steps[this.active.step] : null;
-};
-V.Missions.prototype.targetPos = function targetPos() {
-  const s = this.currentStep();
-  if (!s) return null;
-  if (s.kind === 'goto' || s.kind === 'pickup') return { x: s.x, z: s.z };
-  if (s.kind === 'enter' && this.taxiCar) return { x: this.taxiCar.pos.x, z: this.taxiCar.pos.z };
-  if (s.kind === 'enter' && this.stealCar) return { x: this.stealCar.pos.x, z: this.stealCar.pos.z };
-  return null;
-};
-V.Missions.prototype.stepText = function stepText() {
-  const a = this.active;
-  if (!a) return null;
-  const s = a.def.steps[a.step];
-  let t = s.text;
-  if (s.time) t += ' — ' + V.clock(a.timeLeft);
-  return t;
-};
-
-/** Advance the active mission; call every frame with the player's live state. */
-V.Missions.prototype.update = function update(dt, player) {
-  const a = this.active;
-  if (!a) return;
-  const step = a.def.steps[a.step];
-  // beacon bob + spin
-  if (this.marker.visible) {
-    this._gem.rotation.y += dt * 2;
-    this._gem.position.y = 7 + Math.sin(performance.now() * 0.003) * 0.5;
+  function objectiveText() {
+    if (activeIndex < 0) {
+      if (completed >= MISSIONS.length) return { title: 'King of Veldora', text: 'All five jobs done. The coast is yours, Rico. Free-roam, cause chaos, enjoy the sunset.', dist: '' };
+      return { title: `Next job: ${MISSIONS[completed].name}`, text: `${MISSIONS[completed].blurb} Press R to start.`, dist: '' };
+    }
+    const m = MISSIONS[activeIndex];
+    const texts = {
+      1: stage === 0 ? 'Meet the courier at the plaza fountain.' : 'Drive the courier to the marina pier.',
+      2: stage === 0 ? 'Steal the orange Comet GT by the Spire (press E at the car).' : 'Deliver the Comet GT to the garage on Dock Street.',
+      3: stage === 0 ? 'Pick up the package in the alley (walk into the marker).' : 'Run the package to the beach hut. The cops are onto you — go!',
+      4: `Deal with the Dock Rats at the fish market. ${gangLeft} left.`,
+      5: `Checkpoint ${raceIndex + 1} of 5 — ${Math.max(0, Math.ceil(timer))}s left!`,
+    };
+    return { title: `${m.name} — $${m.reward}`, text: texts[m.id], dist: '' };
   }
-  if (this.packageMesh) this.packageMesh.rotation.y += dt * 1.5;
-  // timers
-  if (step.time) {
-    a.timeLeft -= dt;
-    if (a.timeLeft <= 0) {
-      this.ctx.toast('MISSION FAILED — out of time', 3500);
-      this.ctx.audio.busted();
-      this.stop(false);
-      if (this.ctx.onEvent) this.ctx.onEvent('failed');
-      return;
+
+  function start(index) {
+    activeIndex = index;
+    stage = 0;
+    timer = index === 4 ? 90 : 0;
+    gangLeft = 0;
+    packageHeld = false;
+    if (index === 4) {
+      raceCheckpoints = [
+        new THREE.Vector3(0, 0, 112), new THREE.Vector3(168, 0, 112),
+        new THREE.Vector3(168, 0, -112), new THREE.Vector3(-168, 0, -112),
+        new THREE.Vector3(0, 0, 0),
+      ];
+      raceIndex = 0;
+    }
+    if (index === 3) {
+      hooks.spawnGang(L.fishMarket);
+      gangLeft = 3;
+    }
+    if (index === 2) hooks.toast('The Comet GT glints by the Spire. Take it.');
+    const t = targetOf();
+    if (t) { beacon.position.set(t.x, 0, t.z); beacon.visible = true; }
+    hooks.toast(`Job ${index + 1}: ${MISSIONS[index].name} — $${MISSIONS[index].reward}`);
+    hooks.audio.fanfare();
+  }
+
+  function complete() {
+    const m = MISSIONS[activeIndex];
+    hooks.addCash(m.reward);
+    hooks.toast(`Job done: ${m.name}! +$${m.reward}`);
+    hooks.audio.fanfare();
+    completed = Math.max(completed, activeIndex + 1);
+    activeIndex = -1;
+    beacon.visible = false;
+    hooks.save();
+    if (completed >= MISSIONS.length) {
+      hooks.toast('KING OF VELDORA. Every job done — the coast is yours.');
     }
   }
-  let done = false;
-  if (step.kind === 'goto' || step.kind === 'pickup') {
-    if (step.needCar && !player.inCar) done = false;
-    else done = V.dist2d(player.pos.x, player.pos.z, step.x, step.z) < step.radius;
-  } else if (step.kind === 'enter') {
-    const car = step.taxi ? this.taxiCar : this.stealCar;
-    done = !!player.inCar && player.car === car;
-    if (done && step.stealCar) {
-      this.ctx.police.addCrime(1);
-      this.ctx.toast('Stolen! The law saw that one.', 2500);
+
+  function fail(reason) {
+    hooks.toast(reason);
+    hooks.audio.fail();
+    activeIndex = -1;
+    beacon.visible = false;
+  }
+
+  function gangDown() {
+    if (activeIndex !== 3) return;
+    gangLeft = Math.max(0, gangLeft - 1);
+    if (gangLeft === 0) complete();
+  }
+
+  function step(dt, playerPos, inCar, car) {
+    if (activeIndex < 0) return;
+    const m = MISSIONS[activeIndex];
+    if (m.id === 5) {
+      timer -= dt;
+      if (timer <= 0) { fail('Out of time! The crown slips away — press R to run it again.'); return; }
     }
-  } else if (step.kind === 'survive') {
-    done = a.timeLeft <= 0;
+    const t = targetOf();
+    if (!t) return;
+    beacon.userData.diamond.rotation.y += dt * 2;
+    beacon.userData.diamond.position.y = 5 + Math.sin(performance.now() / 300) * 0.6;
+    const dist = Math.hypot(playerPos.x - t.x, playerPos.z - t.z);
+    // Mission 1: the courier rides with you once you reach him — stage 2 needs a car.
+    if (m.id === 1 && stage === 0 && dist < 4) {
+      stage = 1;
+      hooks.toast('Courier: "Marina pier. Fast. And don\'t scratch the paint."');
+    } else if (m.id === 1 && stage === 1 && dist < 5 && inCar) complete();
+    else if (m.id === 2 && stage === 0 && car === city.cometCar && inCar) {
+      stage = 1;
+      hooks.toast('The Comet is yours. Now lose yourself in the garage.');
+      hooks.addWanted(1);
+    } else if (m.id === 2 && stage === 1 && dist < 6 && inCar && car === city.cometCar) complete();
+    else if (m.id === 3 && stage === 0 && dist < 4) {
+      stage = 1; packageHeld = true;
+      hooks.toast('Package grabbed. Beach hut, south end. Move!');
+      hooks.addWanted(2);
+    } else if (m.id === 3 && stage === 1 && dist < 5) complete();
+    else if (m.id === 4 && gangLeft === 0) complete();
+    else if (m.id === 5 && dist < 6) {
+      raceIndex += 1;
+      hooks.audio.chime();
+      if (raceIndex >= raceCheckpoints.length) complete();
+    }
+    const nt = targetOf();
+    if (nt) beacon.position.set(nt.x, 0, nt.z);
   }
-  if (!done) return;
-  // step complete
-  this.ctx.audio.pickup();
-  a.step++;
-  if (a.step >= a.def.steps.length) {
-    const reward = a.def.reward;
-    const idx = a.index;
-    this.ctx.toast('MISSION COMPLETE — +' + V.money(reward), 4000);
-    this.ctx.audio.missionDone();
-    const wasLast = idx === V.MISSION_DEFS.length - 1;
-    this.stop(false);
-    if (this.ctx.onEvent) this.ctx.onEvent('completed', { reward: reward, index: idx, wasLast: wasLast });
-    if (idx + 1 < V.MISSION_DEFS.length) this.unlocked = Math.max(this.unlocked, idx + 2);
-    if (wasLast && this.ctx.onEvent) this.ctx.onEvent('legend');
-  } else {
-    this._beginStep();
-  }
-};
+
+  return {
+    beacon,
+    get activeIndex() { return activeIndex; },
+    get completed() { return completed; },
+    setCompleted(v) { completed = v; },
+    targetOf,
+    objectiveText,
+    start,
+    gangDown,
+    step,
+    get packageHeld() { return packageHeld; },
+    get raceTimer() { return timer; },
+  };
+}
