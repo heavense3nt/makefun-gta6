@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELDORA — Open-World Crime Game</title>
+<link rel="stylesheet" href="./src/style.css">
+<script src="./vendor/three.min.js"></script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="damage-flash"></div>
+<div id="hud"></div>
+<div id="error" style="display:none"></div>
+
+<div id="menu" class="overlay">
+  <div class="menu-card">
+    <h1>VELDORA</h1>
+    <p class="tagline">An open-world crime game in Veldora Bay</p>
+    <p class="story">You are <b>Kai Mercer</b>, a new driver in the sun-soaked coastal city of Veldora Bay.
+    You owe <b>Mara Solano</b> — and her garage is the only place that will take you in.
+    Work five jobs, outrun the Bay PD, and take down <b>Vince Kroll</b> before he takes you down.</p>
+    <div class="controls">
+      <span><b>WASD</b> move / drive</span><span><b>E</b> steal / exit car</span>
+      <span><b>Mouse click</b> shoot</span><span><b>F</b> punch</span>
+      <span><b>R</b> reload</span><span><b>Shift</b> sprint</span>
+      <span><b>Drag mouse</b> camera</span><span><b>Esc</b> pause</span>
+    </div>
+    <button id="btn-start">▶ Start — Job 1</button>
+    <button id="btn-continue" style="display:none">Continue</button>
+    <p class="fine">A fully original game. No assets, names or music from any commercial game.</p>
+  </div>
+</div>
+
+<div id="paused" class="overlay" style="display:none">
+  <div class="menu-card">
+    <h1>Paused</h1>
+    <p class="story">Veldora Bay waits for no one — except right now.</p>
+    <button id="btn-resume">▶ Resume</button>
+    <button id="btn-restart">↺ Restart</button>
+  </div>
+</div>
+
+<div id="busted" class="overlay" style="display:none">
+  <div class="menu-card busted-card">
+    <h1>BUSTED!</h1>
+    <p id="busted-msg" class="story"></p>
+  </div>
+</div>
+
+<div id="complete" class="overlay" style="display:none">
+  <div class="menu-card">
+    <h1>VELDORA LEGEND</h1>
+    <p class="story">Kroll is finished, Mara's garage is yours, and the whole bay knows your name.</p>
+    <p id="complete-stats" class="story"></p>
+    <button id="btn-again">↺ Play again</button>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+/* VELDORA styles — HUD, minimap, menus, toasts. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0e14;
+  font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+#damage-flash { position: fixed; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(200,0,0,0.55) 100%);
+  transition: opacity 0.15s; z-index: 5; }
+#error { position: fixed; top: 10px; left: 10px; z-index: 99; background: #a00; padding: 10px; border-radius: 6px; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+.panel { background: rgba(8, 12, 18, 0.72); border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px; padding: 8px 12px; backdrop-filter: blur(2px); }
+#objective { position: absolute; top: 12px; left: 12px; max-width: 430px; font-size: 14px; line-height: 1.45; }
+#topright { position: absolute; top: 12px; right: 12px; text-align: right; min-width: 170px; }
+#stars { font-size: 20px; letter-spacing: 3px; color: #8899aa; }
+#stars.hot { color: #ffd23f; text-shadow: 0 0 8px rgba(255,210,63,0.8); }
+#cash { font-size: 22px; font-weight: 700; color: #7be495; margin-top: 2px; }
+#healthbar { height: 8px; background: rgba(255,255,255,0.18); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+#healthfill { height: 100%; width: 100%; background: #3fae5a; border-radius: 4px; }
+#ammo { font-size: 13px; margin-top: 5px; color: #cfd8e3; }
+#minimap-wrap { position: absolute; left: 12px; bottom: 12px; }
+#minimap { border: 2px solid rgba(255,255,255,0.35); border-radius: 50%; background: #20262e; }
+#bustbar { height: 6px; background: rgba(255,255,255,0.18); border-radius: 3px; margin-top: 5px; overflow: hidden; }
+#bustfill { height: 100%; width: 0%; background: #d93b2e; }
+#speed { position: absolute; right: 16px; bottom: 16px; font-size: 26px; font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+#crosshair { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  font-size: 22px; color: rgba(255,255,255,0.85); text-shadow: 0 0 4px #000; }
+#toasts { position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.toast { background: rgba(8,12,18,0.85); border: 1px solid rgba(255,210,63,0.5); color: #ffe9a8;
+  padding: 7px 14px; border-radius: 6px; font-size: 14px; white-space: nowrap; }
+#hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.35);
+  padding: 4px 10px; border-radius: 5px; white-space: nowrap; }
+
+.overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, rgba(10,20,35,0.82), rgba(60,20,10,0.55)); }
+.menu-card { max-width: 560px; width: 90%; text-align: center; background: rgba(10,16,24,0.88);
+  border: 1px solid rgba(255,210,63,0.35); border-radius: 14px; padding: 34px 30px; }
+.menu-card h1 { font-size: 56px; letter-spacing: 10px; color: #ffd23f;
+  text-shadow: 0 4px 24px rgba(255,150,40,0.55); margin-bottom: 6px; }
+.tagline { font-size: 15px; color: #9fc3e8; margin-bottom: 16px; font-style: italic; }
+.story { font-size: 15px; line-height: 1.6; color: #dbe4ee; margin-bottom: 18px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 22px; }
+.controls span { font-size: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+  padding: 5px 9px; border-radius: 5px; }
+.controls b { color: #ffd23f; }
+button { pointer-events: auto; cursor: pointer; font-size: 17px; font-weight: 700; color: #1a1206;
+  background: linear-gradient(180deg, #ffd23f, #f0a832); border: none; border-radius: 8px;
+  padding: 12px 26px; margin: 4px; box-shadow: 0 4px 14px rgba(240,168,50,0.4); }
+button:hover { filter: brightness(1.08); }
+.fine { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 14px; }
+.busted-card h1 { color: #ff4444; text-shadow: 0 4px 24px rgba(255,0,0,0.6); }
