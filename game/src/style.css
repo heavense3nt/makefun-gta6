@@ -1,0 +1,31 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1420; font-family: 'Segoe UI', Arial, sans-serif; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#hud { position: fixed; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+#top-left { position: absolute; top: 14px; left: 16px; }
+#stars { font-size: 26px; letter-spacing: 2px; color: #ffd23e; min-height: 32px; }
+#stars .off { color: rgba(255,255,255,.35); }
+#cash { font-size: 22px; font-weight: 700; color: #7dff9a; }
+#clock { font-size: 15px; opacity: .85; }
+#top-right { position: absolute; top: 14px; right: 16px; text-align: right; max-width: 380px; }
+#mission-title { font-size: 19px; font-weight: 700; letter-spacing: 1px; }
+#mission-text { font-size: 14px; opacity: .9; }
+#bottom-left { position: absolute; left: 16px; bottom: 16px; width: 240px; }
+#health, #armor { height: 12px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.4); margin-bottom: 5px; }
+#health-fill { height: 100%; width: 100%; background: #ff5a5a; }
+#armor-fill { height: 100%; width: 0%; background: #5ab8ff; }
+#ammo { font-size: 15px; font-weight: 700; }
+#bottom-right { position: absolute; right: 16px; bottom: 16px; text-align: center; }
+#minimap { border: 2px solid rgba(255,255,255,.55); border-radius: 50%; background: rgba(10,18,30,.85); }
+#speed { font-size: 17px; font-weight: 700; margin-top: 4px; }
+#toast { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: 800; letter-spacing: 1px; text-align: center; }
+#dialogue { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); max-width: 640px; background: rgba(0,0,0,.65); padding: 10px 16px; border-radius: 8px; font-size: 16px; line-height: 1.4; display: none; }
+#title-screen, #pause-screen, #busted-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,24,.72); color: #fff; text-align: center; z-index: 5; }
+#title-screen h1 { font-size: 84px; letter-spacing: 14px; margin: 0; color: #ffd23e; text-shadow: 0 4px 24px rgba(255,180,0,.5); }
+#title-screen .subtitle { font-size: 20px; letter-spacing: 3px; opacity: .9; }
+#title-screen .jobs { font-size: 16px; line-height: 1.7; }
+#title-screen .controls { font-size: 14px; opacity: .75; line-height: 1.7; }
+#title-screen .play { font-size: 22px; font-weight: 800; color: #7dff9a; animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { opacity: .4; } }
+#pause-screen, #busted-screen { display: none; }
+#pause-screen h2, #busted-screen h2 { font-size: 56px; letter-spacing: 8px; margin: 0; }
+#busted-screen h2 { color: #ff5a5a; }

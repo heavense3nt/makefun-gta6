@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELDORA — Aurel Bay</title>
+<link rel="stylesheet" href="./src/style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="top-left">
+    <div id="stars"></div>
+    <div id="cash">$0</div>
+    <div id="clock">18:40</div>
+  </div>
+  <div id="top-right">
+    <div id="mission-title">VELDORA</div>
+    <div id="mission-text">Press M to start the first job</div>
+  </div>
+  <div id="bottom-left">
+    <div id="health"><div id="health-fill"></div></div>
+    <div id="armor"><div id="armor-fill"></div></div>
+    <div id="ammo">PISTOL — 12 / 48</div>
+  </div>
+  <div id="bottom-right">
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="speed">0 MPH</div>
+  </div>
+  <div id="toast"></div>
+  <div id="dialogue"></div>
+</div>
+<div id="title-screen">
+  <h1>VELDORA</h1>
+  <p class="subtitle">Aurel Bay — an open-world crime story</p>
+  <p class="jobs">Five jobs. One crew. No way back.<br>First Fare · The Pickup · Hot Wheels · Heat Wave · The Big Score</p>
+  <p class="controls">WASD move / drive · Mouse drag camera · E steal car · Click shoot · Space jump / brake<br>Shift sprint · R reload · F horn · M next job · P pause · H hide HUD</p>
+  <p class="play">Click to play</p>
+</div>
+<div id="pause-screen"><h2>PAUSED</h2><p>Progress saved. Press P to keep playing.</p></div>
+<div id="busted-screen"><h2>BUSTED</h2><p>The Aurel Bay police took you in. Press Enter to try again.</p></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
