@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELDORA — Open-World Crime Game</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #fff; }
+  #app { position: fixed; inset: 0; }
+  #view { width: 100%; height: 100%; display: block; touch-action: none; }
+  .hidden { display: none !important; }
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  #topbar { position: absolute; top: 14px; left: 16px; display: flex; gap: 18px; align-items: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+  #wanted { font-size: 26px; letter-spacing: 2px; color: #3a3f4a; }
+  #wanted .on { color: #ffd23e; text-shadow: 0 0 10px rgba(255,210,62,.9); }
+  #wanted.hot .on { color: #ff5340; text-shadow: 0 0 12px rgba(255,83,64,.95); animation: pulse .5s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+  #cash { font-size: 22px; font-weight: 800; color: #7dff9a; }
+  #clock { font-size: 18px; font-weight: 700; opacity: .9; }
+  #minimapWrap { position: absolute; top: 14px; right: 16px; border: 3px solid rgba(255,255,255,.85);
+    border-radius: 50%; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.55); background: #123; }
+  #minimap { display: block; width: 176px; height: 176px; }
+  #objective { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+    background: rgba(8,12,24,.72); border: 1px solid rgba(255,255,255,.25); border-radius: 8px;
+    padding: 8px 16px; font-size: 16px; font-weight: 700; text-align: center; max-width: 70vw;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+  #objective small { display: block; font-size: 12px; color: #ffd23e; letter-spacing: 1px; }
+  #vitals { position: absolute; left: 16px; bottom: 16px; width: 230px; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+  .barRow { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; font-weight: 700; }
+  .bar { flex: 1; height: 12px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.4); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; }
+  #healthFill { background: linear-gradient(90deg, #37d67a, #9dff57); width: 100%; }
+  #armorFill { background: linear-gradient(90deg, #4aa8ff, #9fd8ff); width: 0%; }
+  #ammo { font-size: 15px; margin-top: 6px; font-weight: 700; }
+  #speedo { position: absolute; right: 20px; bottom: 16px; text-align: right; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  #speedVal { font-size: 44px; font-weight: 900; line-height: 1; }
+  #speedUnit { font-size: 13px; font-weight: 700; opacity: .85; }
+  #gearLabel { font-size: 15px; font-weight: 800; color: #ffd23e; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff;
+    box-shadow: 0 0 4px #000; }
+  #crosshair::before { left: 10px; top: 0; width: 2px; height: 22px; }
+  #crosshair::after { left: 0; top: 10px; width: 22px; height: 2px; }
+  #toast { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center;
+    font-size: 30px; font-weight: 900; letter-spacing: 1px; color: #ffd23e;
+    text-shadow: 0 3px 0 #7a4d00, 0 6px 18px rgba(0,0,0,.8); opacity: 0; transition: opacity .3s; }
+  #toast.show { opacity: 1; }
+  #toast small { display: block; font-size: 16px; color: #fff; text-shadow: 0 2px 6px #000; }
+  #dialogue { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); width: min(620px, 86vw);
+    background: rgba(5,8,18,.82); border-left: 5px solid #ffd23e; border-radius: 6px; padding: 12px 16px;
+    font-size: 16px; line-height: 1.45; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+  #dialogue b { color: #ffd23e; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 6; opacity: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(255,0,0,.55) 100%); transition: opacity .15s; }
+  #hint { position: absolute; left: 16px; bottom: 108px; font-size: 13px; opacity: .85;
+    text-shadow: 0 2px 4px #000; line-height: 1.6; }
+  /* ---------- Menus ---------- */
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    background: linear-gradient(160deg, rgba(10,14,34,.88), rgba(64,16,60,.82) 55%, rgba(10,40,70,.88)); }
+  .screen h1 { font-size: min(96px, 14vw); margin: 0; letter-spacing: 6px; font-weight: 900;
+    background: linear-gradient(180deg, #ffe98a, #ff9d2e 55%, #ff5340); -webkit-background-clip: text;
+    background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)); }
+  .screen h2 { margin: 2px 0 0; font-size: 20px; letter-spacing: 8px; color: #9fd8ff; font-weight: 700; }
+  .screen p.tag { margin: 14px 0 4px; font-size: 17px; color: #e8ecff; max-width: 560px; line-height: 1.5; }
+  .btn { pointer-events: auto; cursor: pointer; margin-top: 18px; padding: 14px 42px; font-size: 20px; font-weight: 900;
+    letter-spacing: 2px; color: #1a1200; background: linear-gradient(180deg, #ffe98a, #ffb52e); border: none;
+    border-radius: 10px; box-shadow: 0 6px 0 #a86a00, 0 10px 24px rgba(0,0,0,.5); }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #a86a00; }
+  .btn.ghost { background: rgba(255,255,255,.14); color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.4); font-size: 16px; padding: 10px 26px; }
+  .controls { margin-top: 22px; font-size: 14px; line-height: 1.9; color: #cfd8ff; background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 12px 22px; text-align: left; }
+  .controls b { color: #ffd23e; display: inline-block; min-width: 118px; }
+  #missionList { margin-top: 16px; font-size: 14px; color: #e8ecff; line-height: 1.8; text-align: left; }
+  #missionList .done { color: #7dff9a; }
+  #missionList .next { color: #ffd23e; font-weight: 800; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="app"><canvas id="view" aria-label="VELDORA open-world crime game"></canvas></div>
+
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div id="wanted" aria-label="wanted level"></div>
+    <div id="cash">$0</div>
+    <div id="clock">12:00</div>
+  </div>
+  <div id="minimapWrap"><canvas id="minimap" width="176" height="176"></canvas></div>
+  <div id="objective" class="hidden"><small id="objectiveKicker">MISSION</small><span id="objectiveText"></span></div>
+  <div id="vitals">
+    <div class="barRow"><span>HP</span><div class="bar"><div id="healthFill"></div></div></div>
+    <div class="barRow"><span>ARMOR</span><div class="bar"><div id="armorFill"></div></div></div>
+    <div id="ammo">PISTOL &nbsp;∞</div>
+  </div>
+  <div id="speedo" class="hidden"><div id="speedVal">0</div><div id="speedUnit">MPH</div><div id="gearLabel"></div></div>
+  <div id="crosshair" class="hidden"></div>
+  <div id="toast"></div>
+  <div id="dialogue" class="hidden"></div>
+  <div id="hint"></div>
+</div>
+<div id="vignette"></div>
+
+<div id="startScreen" class="screen">
+  <h1>VELDORA</h1>
+  <h2>SOLMAR BAY &middot; OPEN WORLD</h2>
+  <p class="tag">A sun-soaked coastal city. Steal cars, outrun the law, run five jobs for the
+    Veldora crew — and make it out rich. An original open-world crime game.</p>
+  <button class="btn" id="playBtn">▶ &nbsp;PLAY</button>
+  <button class="btn ghost hidden" id="continueBtn">CONTINUE SAVED GAME</button>
+  <div id="missionList"></div>
+  <div class="controls">
+    <div><b>W A S D</b> move / drive &nbsp;·&nbsp; <b>Mouse drag</b> camera &nbsp;·&nbsp; <b>Wheel</b> zoom</div>
+    <div><b>E</b> enter / exit car &nbsp;·&nbsp; <b>Space</b> brake / jump &nbsp;·&nbsp; <b>Shift</b> sprint</div>
+    <div><b>Click</b> shoot &nbsp;·&nbsp; <b>R</b> reload &nbsp;·&nbsp; <b>M</b> mission &nbsp;·&nbsp; <b>P / Esc</b> pause</div>
+    <div><b>F</b> horn &nbsp;·&nbsp; <b>C</b> camera view &nbsp;·&nbsp; <b>H</b> hide HUD</div>
+  </div>
+</div>
+
+<div id="pauseScreen" class="screen hidden">
+  <h1 style="font-size:56px">PAUSED</h1>
+  <p class="tag">Solmar Bay waits for no one. Except right now.</p>
+  <button class="btn" id="resumeBtn">RESUME</button>
+  <button class="btn ghost" id="saveBtn">SAVE GAME</button>
+  <button class="btn ghost" id="quitBtn">QUIT TO TITLE</button>
+</div>
+
+<div id="overScreen" class="screen hidden">
+  <h1 style="font-size:64px">BUSTED</h1>
+  <p class="tag" id="overText">The Solmar Bay police finally caught up with you.</p>
+  <button class="btn" id="retryBtn">TRY AGAIN</button>
+  <button class="btn ghost" id="overQuitBtn">QUIT TO TITLE</button>
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
