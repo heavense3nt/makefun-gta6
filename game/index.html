@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VELDORA — Solmar Bay</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1e33; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #eef1f5; }
+  #top-right { position: absolute; top: 14px; right: 16px; text-align: right; text-shadow: 0 1px 3px #000; }
+  #stars { font-size: 26px; letter-spacing: 2px; }
+  #cash { font-size: 22px; font-weight: 700; color: #7be495; }
+  #clock { font-size: 15px; color: #c9d1de; }
+  #top-left { position: absolute; top: 14px; left: 16px; text-shadow: 0 1px 3px #000; }
+  #objective { font-size: 15px; font-weight: 600; color: #ffd94a; max-width: 340px; }
+  #bars { position: absolute; left: 16px; bottom: 16px; width: 240px; }
+  .bar { height: 12px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.35); margin-top: 5px; }
+  .bar > div { height: 100%; }
+  #hp-bar { background: #4caf50; width: 100%; }
+  #armor-bar { background: #4fa3d8; width: 0%; }
+  #bottom-right { position: absolute; right: 16px; bottom: 16px; text-align: right; text-shadow: 0 1px 3px #000; }
+  #ammo { font-size: 20px; font-weight: 700; }
+  #speed { font-size: 26px; font-weight: 800; }
+  #minimap { position: absolute; left: 16px; bottom: 86px; width: 168px; height: 168px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); background: rgba(10,14,24,0.6); }
+  #toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(10,14,24,0.8); padding: 10px 18px; border-radius: 6px; font-size: 16px; opacity: 0; transition: opacity 0.3s; max-width: 640px; text-align: center; }
+  #banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font-size: 34px; font-weight: 900; letter-spacing: 3px; color: #ffd94a; text-shadow: 0 2px 8px #000; opacity: 0; transition: opacity 0.3s; }
+  #crosshair { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 20px; color: rgba(255,255,255,0.85); text-shadow: 0 0 4px #000; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, rgba(26,30,51,0.88), rgba(58,32,64,0.9)); color: #eef1f5; z-index: 5; }
+  .screen h1 { font-size: 64px; letter-spacing: 10px; margin: 0; color: #ff5a7a; text-shadow: 0 3px 18px rgba(255,90,122,0.6); }
+  .screen h2 { font-weight: 400; color: #ffd94a; margin: 6px 0 18px; letter-spacing: 2px; }
+  .screen ul { list-style: none; padding: 0; margin: 0 0 22px; font-size: 15px; line-height: 1.9; color: #c9d1de; }
+  .screen button { pointer-events: auto; font-size: 20px; padding: 12px 42px; border: none; border-radius: 6px; background: #ff5a7a; color: #fff; cursor: pointer; font-weight: 700; letter-spacing: 2px; }
+  .screen button:hover { background: #ff748f; }
+  .screen p { color: #c9d1de; font-size: 14px; max-width: 560px; text-align: center; line-height: 1.7; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="VELDORA: an open-world crime game in Solmar Bay"></canvas>
+<div id="hud">
+  <div id="top-left"><div id="objective"></div></div>
+  <div id="top-right"><div id="stars">☆☆☆☆☆</div><div id="cash">$0</div><div id="clock">18:00</div></div>
+  <div id="bars"><div class="bar"><div id="hp-bar"></div></div><div class="bar"><div id="armor-bar"></div></div></div>
+  <canvas id="minimap" width="168" height="168"></canvas>
+  <div id="bottom-right"><div id="ammo">12 / 60</div><div id="speed"></div></div>
+  <div id="crosshair">+</div>
+  <div id="toast"></div>
+  <div id="banner"></div>
+</div>
+<div id="title-screen" class="screen">
+  <h1>VELDORA</h1>
+  <h2>SOLMAR BAY — AN OPEN-WORLD CRIME GAME</h2>
+  <ul id="title-jobs"></ul>
+  <button id="play-btn">PLAY</button>
+  <p>W A S D move &amp; drive · mouse drag camera · E steal / exit car · click shoot · R reload · F horn · M next job · P pause</p>
+</div>
+<div id="pause-screen" class="screen" style="display:none">
+  <h1>PAUSED</h1>
+  <p>Your progress is saved.</p>
+  <button id="resume-btn">RESUME</button>
+</div>
+<div id="busted-screen" class="screen" style="display:none">
+  <h1>BUSTED</h1>
+  <p>Detective Hale caught up with you. Solmar Bay always collects.</p>
+  <button id="restart-btn">TRY AGAIN</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
